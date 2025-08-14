@@ -1,0 +1,135 @@
+/* src/styles/kanban.css - Дополнительные стили для Kanban Board */
+
+/* Поддержка line-clamp для ограничения строк текста */
+.line-clamp-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.line-clamp-3 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+/* Анимации для Kanban карточек */
+.kanban-card {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.kanban-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.kanban-card.dragging {
+  transform: rotate(2deg) scale(1.02);
+  box-shadow: 0 20px 30px -5px rgba(0, 0, 0, 0.15), 0 10px 15px -5px rgba(0, 0, 0, 0.08);
+  z-index: 1000;
+  cursor: grabbing !important;
+}
+
+/* Стили для колонок Kanban */
+.kanban-column {
+  transition: all 0.2s ease-in-out;
+}
+
+.kanban-column.drag-over {
+  background-color: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.3);
+  transform: scale(1.02);
+}
+
+/* Скроллбар для колонок Kanban */
+.kanban-column-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.kanban-column-content::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+}
+
+.kanban-column-content::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.kanban-column-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Firefox scrollbar для колонок */
+.kanban-column-content {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) rgba(0, 0, 0, 0.05);
+}
+
+/* Полная высота для Kanban Board */
+.kanban-board-full-height {
+  height: calc(100vh - 200px); /* Вычитаем высоту header и tabs */
+  min-height: 600px;
+}
+
+/* Стили для drag overlay */
+.dnd-overlay {
+  z-index: 999;
+}
+
+/* Адаптивные стили */
+@media (max-width: 768px) {
+  .kanban-column {
+    min-width: 280px;
+    width: 280px;
+  }
+
+  .kanban-board-container {
+    padding: 1rem;
+  }
+
+  .kanban-card {
+    padding: 0.75rem;
+  }
+}
+
+/* Анимация загрузки для Kanban */
+.kanban-loading {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Стили для пустого состояния колонки */
+.empty-column-placeholder {
+  transition: all 0.3s ease;
+  opacity: 0.6;
+}
+
+.empty-column-placeholder:hover {
+  opacity: 0.8;
+  transform: scale(1.05);
+}
+
+/* Стили для поиска в Kanban */
+.kanban-search-highlight {
+  background-color: rgba(255, 235, 59, 0.3);
+  border-radius: 2px;
+  padding: 0 2px;
+}

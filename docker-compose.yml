@@ -1,0 +1,241 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: crm_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/01-init.sql
+    networks:
+      - crm_network
+
+  # Zookeeper (требуется для Kafka)
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: crm_zookeeper
+    restart: unless-stopped
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+      - zookeeper_logs:/var/lib/zookeeper/log
+    networks:
+      - crm_network
+
+  # Kafka
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: crm_kafka
+    restart: unless-stopped
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "9101:9101"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_JMX_PORT: 9101
+      KAFKA_JMX_HOSTNAME: localhost
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+      KAFKA_DELETE_TOPIC_ENABLE: 'true'
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks:
+      - crm_network
+
+  # Kafka UI (опционально, для мониторинга)
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: crm_kafka_ui
+    restart: unless-stopped
+    depends_on:
+      - kafka
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    networks:
+      - crm_network
+
+  # Kafka Topics Initializer
+  kafka-init:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: crm_kafka_init
+    restart: "no"
+    depends_on:
+      - kafka
+    volumes:
+      - ./kafka-init.sh:/kafka-init.sh
+    command: ["/bin/bash", "/kafka-init.sh"]
+    networks:
+      - crm_network
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: crm_backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=${NODE_ENV}
+      - PORT=${PORT}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
+      - JWT_REFRESH_EXPIRES_IN=${JWT_REFRESH_EXPIRES_IN}
+      - CORS_ORIGIN=${CORS_ORIGIN}
+      - KAFKA_BROKERS=${KAFKA_BROKERS}
+      - KAFKA_CLIENT_ID=${KAFKA_CLIENT_ID}
+      - KAFKA_GROUP_ID=${KAFKA_GROUP_ID}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+      - LOG_LEVEL=${LOG_LEVEL}
+      - BCRYPT_ROUNDS=${BCRYPT_ROUNDS}
+      - RATE_LIMIT_WINDOW_MS=${RATE_LIMIT_WINDOW_MS}
+      - RATE_LIMIT_MAX_REQUESTS=${RATE_LIMIT_MAX_REQUESTS}
+      - ENABLE_SWAGGER=${ENABLE_SWAGGER}
+      - ENABLE_WEBSOCKET=${ENABLE_WEBSOCKET}
+      - ENABLE_KAFKA=${ENABLE_KAFKA}
+      - ENABLE_TELEGRAM_BOT=${ENABLE_TELEGRAM_BOT}
+      - DEBUG=${DEBUG}
+      - VERBOSE_LOGGING=${VERBOSE_LOGGING}
+    ports:
+      - "5001:5001"
+    volumes:
+      - /app/node_modules
+    depends_on:
+      - postgres
+      - kafka
+    networks:
+      - crm_network
+    command: npm run dev
+
+  # Frontend
+  frontend:
+    image: node:18-alpine
+    container_name: crm_frontend
+    restart: unless-stopped
+    working_dir: /app
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://localhost:5001/api
+      - VITE_WS_URL=ws://localhost:5001
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - crm_network
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+
+  # Telegram Bot Service
+  telegrambot:
+    build:
+      context: ./services/telegrambot
+      dockerfile: Dockerfile
+    container_name: crm_telegrambot
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - KAFKA_BROKERS=${KAFKA_BROKERS}
+      - KAFKA_TOPIC=crm-msgAccepted
+      - KAFKA_GROUP_ID=telegram_bot_group
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+      - LOG_LEVEL=${LOG_LEVEL}
+    volumes:
+      - ./services/telegrambot:/app
+      - telegrambot_logs:/app/logs
+    depends_on:
+      - kafka
+    networks:
+      - crm_network
+
+  # Loki - Log Aggregator
+  loki:
+    image: grafana/loki:2.9.0
+    container_name: crm_loki
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./config/loki:/etc/loki
+      - loki_data:/loki
+    networks:
+      - crm_network
+
+  # Promtail - Log Collector
+  promtail:
+    image: grafana/promtail:2.9.0
+    container_name: crm_promtail
+    restart: unless-stopped
+    volumes:
+      - ./config/promtail:/etc/promtail
+      - /var/log:/var/log
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - crm_network
+
+  # Grafana - Monitoring & Logs UI
+  grafana:
+    image: grafana/grafana:10.0.0
+    container_name: crm_grafana
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin123}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./config/grafana/provisioning:/etc/grafana/provisioning
+    networks:
+      - crm_network
+
+volumes:
+  postgres_data:
+  zookeeper_data:
+  zookeeper_logs:
+  kafka_data:
+  telegrambot_logs:
+  loki_data:
+  grafana_data:
+
+networks:
+  crm_network:
+    driver: bridge

@@ -1,0 +1,23 @@
+# Основные зависимости
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+python-dotenv>=1.0.0
+
+# Kafka (используем только kafka-python для простоты)
+kafka-python>=2.0.2
+
+# Telegram Bot
+python-telegram-bot>=20.7
+
+# HTTP клиент
+httpx>=0.25.0
+aiohttp>=3.9.0
+
+# Логирование
+loguru>=0.7.0
+
+# Валидация данных
+pydantic>=2.5.0
+
+# Утилиты
+python-multipart>=0.0.6
