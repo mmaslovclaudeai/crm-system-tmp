@@ -171,6 +171,7 @@ cd "$PROJECT_DIR"
 # Цвета для вывода
 GREEN='\033[0;32m'
 RED='\033[0;31m'
+YELLOW='\033[1;33m'
 NC='\033[0m'
 
 log() {
@@ -180,6 +181,10 @@ log() {
 error() {
     echo -e "${RED}[ERROR] $1${NC}"
     exit 1
+}
+
+warning() {
+    echo -e "${YELLOW}[WARNING] $1${NC}"
 }
 
 # Проверка .env файла
@@ -201,11 +206,11 @@ log "🚀 Запускаем CRM систему"
 
 # Остановка существующих контейнеров
 log "⏹️ Останавливаем существующие контейнеры"
-docker-compose -f deploy/docker-compose.prod.yml down
+docker-compose down
 
 # Сборка и запуск контейнеров
 log "🔨 Собираем и запускаем контейнеры"
-docker-compose -f deploy/docker-compose.prod.yml up -d --build
+docker-compose up -d --build
 
 # Ожидание готовности сервисов
 log "⏳ Ожидаем готовности сервисов"
@@ -213,22 +218,23 @@ sleep 30
 
 # Проверка статуса контейнеров
 log "🔍 Проверяем статус контейнеров"
-docker-compose -f deploy/docker-compose.prod.yml ps
+docker-compose ps
 
 # Проверка здоровья API
 log "🏥 Проверяем здоровье API"
 if curl -f http://localhost:5000/health > /dev/null 2>&1; then
     log "✅ API работает корректно"
 else
-    warning "⚠️ API не отвечает, проверьте логи: docker-compose -f deploy/docker-compose.prod.yml logs backend"
+    warning "⚠️ API не отвечает, проверьте логи: docker-compose logs backend"
 fi
 
 log "🎉 CRM система запущена успешно!"
 log "📋 Доступные сервисы:"
-log "   - Frontend: https://admin.stage.seniorpomidornaya.ru"
-log "   - Grafana: https://grafana.stage.seniorpomidornaya.ru"
-log "   - Kafka UI: https://kafka-ui.stage.seniorpomidornaya.ru"
-log "   - PostgreSQL: localhost:6432"
+log "   - Frontend: http://localhost:3000"
+log "   - Backend API: http://localhost:5000"
+log "   - Grafana: http://localhost:3001"
+log "   - Kafka UI: http://localhost:8080"
+log "   - PostgreSQL: localhost:5432"
 EOF
 
 chmod +x "$PROJECT_DIR/start.sh"
@@ -257,11 +263,11 @@ log "🔄 Перезапускаем CRM систему"
 
 # Остановка контейнеров
 log "⏹️ Останавливаем контейнеры"
-docker-compose -f deploy/docker-compose.prod.yml down
+docker-compose down
 
 # Запуск контейнеров
 log "🚀 Запускаем контейнеры"
-docker-compose -f deploy/docker-compose.prod.yml up -d
+docker-compose up -d
 
 log "✅ CRM система перезапущена"
 EOF
@@ -304,31 +310,31 @@ read -p "Введите номер: " choice
 case $choice in
     1)
         log "📋 Логи Backend API"
-        docker-compose -f deploy/docker-compose.prod.yml logs -f backend
+        docker-compose logs -f backend
         ;;
     2)
         log "📋 Логи Frontend"
-        docker-compose -f deploy/docker-compose.prod.yml logs -f frontend
+        docker-compose logs -f frontend
         ;;
     3)
         log "📋 Логи PostgreSQL"
-        docker-compose -f deploy/docker-compose.prod.yml logs -f postgres
+        docker-compose logs -f postgres
         ;;
     4)
         log "📋 Логи Kafka"
-        docker-compose -f deploy/docker-compose.prod.yml logs -f kafka
+        docker-compose logs -f kafka
         ;;
     5)
         log "📋 Логи Grafana"
-        docker-compose -f deploy/docker-compose.prod.yml logs -f grafana
+        docker-compose logs -f grafana
         ;;
     6)
         log "📋 Логи Telegram Bot"
-        docker-compose -f deploy/docker-compose.prod.yml logs -f telegrambot
+        docker-compose logs -f telegrambot
         ;;
     7)
         log "📋 Логи всех сервисов"
-        docker-compose -f deploy/docker-compose.prod.yml logs -f
+        docker-compose logs -f
         ;;
     8)
         log "📋 Логи Nginx"
@@ -376,7 +382,7 @@ mkdir -p "$BACKUP_DIR"
 # Бэкап базы данных
 log "🗄️ Создаем бэкап базы данных"
 source "$PROJECT_DIR/.env"
-docker-compose -f "$PROJECT_DIR/deploy/docker-compose.prod.yml" exec -T postgres \
+docker-compose exec -T postgres \
     pg_dump -U "$DB_USER" "$DB_NAME" > "$BACKUP_DIR/db-backup-$DATE.sql"
 
 # Бэкап конфигураций
