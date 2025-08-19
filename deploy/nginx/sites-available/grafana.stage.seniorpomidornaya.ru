@@ -10,9 +10,9 @@ server {
     listen 443 ssl http2;
     server_name grafana.stage.seniorpomidornaya.ru;
 
-    # SSL Configuration
-    ssl_certificate /opt/crm-system/ssl/certs/grafana.stage.seniorpomidornaya.ru.crt;
-    ssl_certificate_key /opt/crm-system/ssl/certs/grafana.stage.seniorpomidornaya.ru.key;
+    # SSL Configuration (временно отключено для получения сертификатов)
+    # ssl_certificate /etc/ssl/certs/grafana.stage.seniorpomidornaya.ru.crt;
+    # ssl_certificate_key /etc/ssl/certs/grafana.stage.seniorpomidornaya.ru.key;
     
     # SSL Security Settings
     ssl_protocols TLSv1.2 TLSv1.3;
@@ -29,7 +29,7 @@ server {
 
     # Grafana proxy
     location / {
-        proxy_pass http://grafana/;
+        proxy_pass http://grafana:3000/;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';

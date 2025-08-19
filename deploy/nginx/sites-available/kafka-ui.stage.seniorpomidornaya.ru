@@ -10,9 +10,9 @@ server {
     listen 443 ssl http2;
     server_name kafka-ui.stage.seniorpomidornaya.ru;
 
-    # SSL Configuration
-    ssl_certificate /opt/crm-system/ssl/certs/kafka-ui.stage.seniorpomidornaya.ru.crt;
-    ssl_certificate_key /opt/crm-system/ssl/certs/kafka-ui.stage.seniorpomidornaya.ru.key;
+    # SSL Configuration (временно отключено для получения сертификатов)
+    # ssl_certificate /etc/ssl/certs/kafka-ui.stage.seniorpomidornaya.ru.crt;
+    # ssl_certificate_key /etc/ssl/certs/kafka-ui.stage.seniorpomidornaya.ru.key;
     
     # SSL Security Settings
     ssl_protocols TLSv1.2 TLSv1.3;
@@ -29,7 +29,7 @@ server {
 
     # Kafka UI proxy
     location / {
-        proxy_pass http://kafka_ui/;
+        proxy_pass http://kafka-ui:8080/;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';

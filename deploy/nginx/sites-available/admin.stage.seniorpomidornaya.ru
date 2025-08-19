@@ -10,9 +10,9 @@ server {
     listen 443 ssl http2;
     server_name admin.stage.seniorpomidornaya.ru;
 
-    # SSL Configuration
-    ssl_certificate /opt/crm-system/ssl/certs/admin.stage.seniorpomidornaya.ru.crt;
-    ssl_certificate_key /opt/crm-system/ssl/certs/admin.stage.seniorpomidornaya.ru.key;
+    # SSL Configuration (временно отключено для получения сертификатов)
+    # ssl_certificate /etc/ssl/certs/admin.stage.seniorpomidornaya.ru.crt;
+    # ssl_certificate_key /etc/ssl/certs/admin.stage.seniorpomidornaya.ru.key;
     
     # SSL Security Settings
     ssl_protocols TLSv1.2 TLSv1.3;
@@ -30,21 +30,22 @@ server {
 
     # Frontend static files
     location / {
-        root /opt/crm-system/frontend/dist;
-        try_files $uri $uri/ /index.html;
-        
-        # Cache static assets
-        location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
-            expires 1y;
-            add_header Cache-Control "public, immutable";
-        }
+        proxy_pass http://frontend:80;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
     }
 
     # API proxy
     location /api/ {
         limit_req zone=api burst=20 nodelay;
         
-        proxy_pass http://backend/;
+        proxy_pass http://backend:5001/;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -59,7 +60,7 @@ server {
 
     # Health check
     location /health {
-        proxy_pass http://backend/health;
+        proxy_pass http://backend:5001/health;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
