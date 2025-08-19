@@ -222,7 +222,7 @@ docker-compose ps
 
 # Проверка здоровья API
 log "🏥 Проверяем здоровье API"
-if curl -f http://localhost:5000/health > /dev/null 2>&1; then
+if curl -f http://localhost:5001/health > /dev/null 2>&1; then
     log "✅ API работает корректно"
 else
     warning "⚠️ API не отвечает, проверьте логи: docker-compose logs backend"
@@ -231,7 +231,7 @@ fi
 log "🎉 CRM система запущена успешно!"
 log "📋 Доступные сервисы:"
 log "   - Frontend: http://localhost:3000"
-log "   - Backend API: http://localhost:5000"
+log "   - Backend API: http://localhost:5001"
 log "   - Grafana: http://localhost:3001"
 log "   - Kafka UI: http://localhost:8080"
 log "   - PostgreSQL: localhost:5432"
