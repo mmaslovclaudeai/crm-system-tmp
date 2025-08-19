@@ -67,6 +67,9 @@ $RECYCLE.BIN/
 .env.development.local
 .env.test.local
 .env.production.local
+# Но НЕ игнорировать примеры
+!env.example
+!.env.example
 
 # Secrets и конфигурационные файлы
 secrets/
