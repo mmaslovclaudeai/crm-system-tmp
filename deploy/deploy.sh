@@ -59,8 +59,6 @@ apt install -y \
     curl \
     wget \
     git \
-    docker.io \
-    docker-compose \
     nginx \
     certbot \
     python3-certbot-nginx \
@@ -73,8 +71,29 @@ apt install -y \
     gnupg \
     lsb-release
 
+# Установка Docker
+log "🐳 Устанавливаем Docker"
+# Удаляем старые версии Docker если есть
+apt remove -y docker docker-engine docker.io containerd runc 2>/dev/null || true
+
+# Добавляем официальный GPG ключ Docker
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+
+# Добавляем репозиторий Docker
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# Обновляем список пакетов
+apt update
+
+# Устанавливаем Docker
+apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+# Устанавливаем docker-compose отдельно (для совместимости)
+curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+chmod +x /usr/local/bin/docker-compose
+
 # Запуск и включение Docker
-log "🐳 Настраиваем Docker"
+log "🐳 Запускаем и настраиваем Docker"
 systemctl start docker
 systemctl enable docker
 
