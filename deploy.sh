@@ -256,7 +256,9 @@ docker-compose down
 
 # Сборка и запуск контейнеров
 log "🔨 Собираем и запускаем контейнеры"
-docker-compose up -d --build
+if ! docker-compose up -d --build; then
+    error "❌ Ошибка при сборке/запуске контейнеров. Проверьте логи: docker-compose logs"
+fi
 
 # Ожидание готовности сервисов
 log "⏳ Ожидаем готовности сервисов"
@@ -465,6 +467,19 @@ log "🔐 Устанавливаем права доступа"
 chown -R crm:crm "$PROJECT_DIR"
 chmod -R 755 "$PROJECT_DIR"
 chmod 600 "$PROJECT_DIR/.env"
+
+# Проверка наличия Dockerfile'ов
+log "🔍 Проверяем наличие Dockerfile'ов"
+if [ ! -f "$PROJECT_DIR/frontend/Dockerfile" ]; then
+    error "❌ Dockerfile не найден в frontend/"
+fi
+if [ ! -f "$PROJECT_DIR/backend/Dockerfile" ]; then
+    error "❌ Dockerfile не найден в backend/"
+fi
+if [ ! -f "$PROJECT_DIR/services/telegrambot/Dockerfile" ]; then
+    error "❌ Dockerfile не найден в services/telegrambot/"
+fi
+log "✅ Все Dockerfile'ы найдены"
 
 log "✅ Деплой завершен успешно!"
 log ""
