@@ -26,21 +26,13 @@ router.get('/',
     `);
 
     // 🔌 ПОЛУЧАЕМ СТАТИСТИКУ WEBSOCKET
-    let webSocketStats = null;
-    try {
-      // Пытаемся получить WebSocket сервис из request или напрямую
-      const webSocketService = req.webSocketService || require('../services/websocketService');
-      webSocketStats = webSocketService.getStats();
-    } catch (error) {
-      console.warn('⚠️ WebSocket статистика недоступна:', error.message);
-      webSocketStats = {
-        connectedClients: 0,
-        pendingEvents: 0,
-        missedEventsCount: 0,
-        uptime: 0,
-        error: 'WebSocket service unavailable'
-      };
-    }
+    let webSocketStats = {
+      connectedClients: 0,
+      pendingEvents: 0,
+      missedEventsCount: 0,
+      uptime: 0,
+      status: 'disabled'
+    };
 
     const healthData = {
       status: 'healthy',
@@ -104,26 +96,14 @@ router.get('/detailed',
     }
 
     // 🔌 ПРОВЕРКА WEBSOCKET СЕРВИСА
-    try {
-      const webSocketService = req.webSocketService || require('../services/websocketService');
-      const wsStats = webSocketService.getStats();
-
-      checks.push({
-        component: 'websocket',
-        status: 'healthy',
-        connectedClients: wsStats.connectedClients,
-        pendingEvents: wsStats.pendingEvents,
-        missedEventsCount: wsStats.missedEventsCount,
-        message: `WebSocket service running with ${wsStats.connectedClients} connected clients`
-      });
-    } catch (error) {
-      checks.push({
-        component: 'websocket',
-        status: 'unhealthy',
-        error: error.message,
-        message: 'WebSocket service unavailable'
-      });
-    }
+    checks.push({
+      component: 'websocket',
+      status: 'disabled',
+      connectedClients: 0,
+      pendingEvents: 0,
+      missedEventsCount: 0,
+      message: 'WebSocket service is disabled'
+    });
 
     // Проверка переменных окружения
     const requiredEnvVars = ['DATABASE_URL', 'JWT_SECRET'];
@@ -189,104 +169,44 @@ router.get('/detailed',
 // 🔌 WEBSOCKET СПЕЦИФИЧНЫЕ HEALTH CHECKS
 router.get('/websocket',
   asyncHandler(async (req, res) => {
-    try {
-      const webSocketService = req.webSocketService || require('../services/websocketService');
-      const stats = webSocketService.getStats();
+    // Дополнительная диагностика
+    const diagnostics = {
+      serverUptime: process.uptime(),
+      nodeVersion: process.version,
+      platform: process.platform,
+      arch: process.arch,
+      pid: process.pid
+    };
 
-      // Дополнительная диагностика
-      const diagnostics = {
-        serverUptime: process.uptime(),
-        nodeVersion: process.version,
-        platform: process.platform,
-        arch: process.arch,
-        pid: process.pid
-      };
-
-      res.json({
-        success: true,
-        data: {
-          status: 'healthy',
-          timestamp: new Date().toISOString(),
-          webSocket: {
-            ...stats,
-            diagnostics
-          }
+    res.json({
+      success: true,
+      data: {
+        status: 'disabled',
+        timestamp: new Date().toISOString(),
+        webSocket: {
+          connectedClients: 0,
+          pendingEvents: 0,
+          missedEventsCount: 0,
+          uptime: 0,
+          status: 'disabled',
+          diagnostics
         }
-      });
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        error: 'WebSocket service health check failed',
-        details: error.message
-      });
-    }
+      }
+    });
   })
 );
 
 // 🧪 ТЕСТОВЫЙ ЭНДПОИНТ ДЛЯ WEBSOCKET СОБЫТИЙ
 router.post('/websocket/test-event',
   asyncHandler(async (req, res) => {
-    try {
-      const { eventType = 'system_notification', data = {} } = req.body;
-      
-      const webSocketService = req.webSocketService || require('../services/websocketService');
-      
-      // Отправляем тестовое событие
-      switch (eventType) {
-        case 'client_created':
-          webSocketService.emitClientCreated({
-            id: 999,
-            name: 'Тестовый клиент',
-            email: 'test@example.com',
-            phone: '+7 (999) 123-45-67',
-            status: 'lead',
-            created_at: new Date().toISOString(),
-            ...data
-          });
-          break;
-          
-        case 'finance_created':
-          webSocketService.emitFinanceCreated({
-            id: 999,
-            amount: 10000,
-            type: 'income',
-            description: 'Тестовая операция',
-            created_at: new Date().toISOString(),
-            ...data
-          });
-          break;
-          
-        case 'cashdesk_created':
-          webSocketService.emitCashDeskCreated({
-            id: 999,
-            name: 'Тестовая касса',
-            current_balance: 50000,
-            created_at: new Date().toISOString(),
-            ...data
-          });
-          break;
-          
-        case 'system_notification':
-        default:
-          webSocketService.emitSystemNotification(
-            'Тестовое уведомление от WebSocket сервера',
-            'info'
-          );
-          break;
-      }
-
-      res.json({
-        success: true,
-        message: `Тестовое событие ${eventType} отправлено`,
-        timestamp: new Date().toISOString()
-      });
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        error: 'Ошибка отправки тестового события',
-        details: error.message
-      });
-    }
+    const { eventType = 'system_notification', data = {} } = req.body;
+    
+    res.json({
+      success: true,
+      message: `WebSocket service is disabled. Event ${eventType} would be sent if enabled.`,
+      timestamp: new Date().toISOString(),
+      note: 'WebSocket service is currently disabled'
+    });
   })
 );
 

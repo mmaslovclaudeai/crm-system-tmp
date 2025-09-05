@@ -7,7 +7,7 @@ const getApiBaseUrl = () => {
     return '/api';
   }
   // В продакшне используем переменную окружения или дефолт
-  return import.meta.env.VITE_API_URL || 'https://admin-stage.dev.crm.seniorpomidornaya.ru/api';
+  return import.meta.env.VITE_API_URL || '/api';
 };
 
 export const API_BASE_URL = getApiBaseUrl();

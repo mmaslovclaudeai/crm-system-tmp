@@ -57,7 +57,7 @@ export const useStatementExport = () => {
         throw new Error('Необходима авторизация для генерации выписки');
       }
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/finances/statement?date_from=${formattedDateFrom}&date_to=${formattedDateTo}`, {
+      const response = await fetch(`/api/finances/statement?date_from=${formattedDateFrom}&date_to=${formattedDateTo}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${accessToken}`,

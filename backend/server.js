@@ -38,7 +38,7 @@ const server = http.createServer(app);
 const PORT = process.env.PORT || 5000;
 
 // 🔧 ИСПРАВЛЕНИЕ: Включаем trust proxy для работы за nginx
-app.set('trust proxy', true);
+app.set('trust proxy', 1);
 
 // 🔒 БЕЗОПАСНОСТЬ: Проверяем критически важные переменные окружения
 if (!process.env.JWT_SECRET || process.env.JWT_SECRET === 'your-secret-key-change-this-in-production-please') {
@@ -74,8 +74,8 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
       'http://localhost:3000',
       'http://localhost:5001',
       'http://127.0.0.1:3000',
-      'http://localhost:3000/crm-form',
-      'https://admin-stage.dev.crm.seniorpomidornaya.ru'
+      'http://127.0.0.1:5001',
+      'http://localhost:3000/crm-form'
     ];
 
 app.use(cors({

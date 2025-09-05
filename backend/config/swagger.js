@@ -19,12 +19,12 @@ const swaggerDefinition = {
   },
   servers: [
     {
-      url: 'http://localhost:5000',
+      url: 'http://localhost:5001',
       description: 'Development сервер'
     },
     {
-      url: 'https://admin-stage.dev.crm.seniorpomidornaya.ru',
-      description: 'Production сервер'
+      url: 'http://localhost:3000',
+      description: 'Frontend Development сервер'
     }
   ],
   // Группировка эндпоинтов по тегам
