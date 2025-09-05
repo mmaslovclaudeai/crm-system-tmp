@@ -28,7 +28,6 @@ cat > .env << 'EOF'
 DB_NAME=db
 DB_USER=postgres
 DB_PASSWORD=
-DB_HOST=postgres
 DB_PORT=5432
 # ========================================
 # JWT CONFIGURATION
@@ -37,8 +36,15 @@ JWT_SECRET=
 JWT_EXPIRES_IN=15m
 JWT_REFRESH_EXPIRES_IN=3d
 # ========================================
+# CORS CONFIGURATION
+# ========================================
+CORS_ORIGIN=http://localhost:3000
+ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5001,http://127.0.0.1:3000,http://127.0.0.1:5001
+# ========================================
 # SERVER CONFIGURATION
 # ========================================
+VITE_API_URL=localhost:3000
+
 PORT=5001
 NODE_ENV=production
 DEBUG=false
@@ -53,8 +59,8 @@ ENABLE_KAFKA=true
 # ========================================
 # TELEGRAM BOT CONFIGURATION
 # ========================================
-TELEGRAM_BOT_TOKEN=8077238326:AAEwgWeXG9mDKrr-1xmaLmz1PcsGZpY22Ak
-TELEGRAM_CHAT_ID=-1002267469682
+TELEGRAM_BOT_TOKEN=8077238326:AAEwgWeXG9mDKrr-1xmaLzz1PcsGZpY22Ak
+TELEGRAM_CHAT_ID=-1002267469632
 TELEGRAM_TOPIC_ID=2
 ENABLE_TELEGRAM_BOT=true
 # ========================================
