@@ -1,0 +1,111 @@
+# Всем привет! Сегодня мы самостоятельно настроим локальное окружение для тестирования
+
+# Замечательный коллега девопс оставил в проекте скрипт setenv.sh
+# Этот скрипт создает шаблон файла .env (обычно называют энв) 
+# Он хранит в себе переменные окружения
+# .env из соображений безопасности нельзя отправлять в удаленный репозиторий
+# Именно поэтому сейчас мы его подправим
+
+# Для начала, в директории проекта пропишем команду
+
+sh setenv.sh
+
+# После успешного создания энва, нужно его отредактировать
+# Ваша задача воспользоваться редактором nano или vim и отредактировать:
+# - DB_PASSWORD=
+# - JWT_SECRET=
+# После установки переменных откружения сохраняем файл
+
+# Далее нам нужно написать файл, с помощью которого мы будем запускать проект
+
+# Файл назовем deploy.sh
+# В файле должно быть несколько блоков:
+# - Проверка необходимых утилит (docker, curl и тд)
+# - Очистка старого мусора (например, если запускаем повторно)
+# - Непосредственно запуск самого веб-приложения
+# - Проверка здоровья контейнеров
+
+# Ниже расписано содержимое файла deploy.sh - просто скопируй и запусти :)
+# "----" - это просто границы файла, их копировать не надо
+
+------------------------------------------------------------------------------
+#!/bin/bash
+
+# CRM-system Deployment Script
+# Проверяем наличие Docker и Docker Compose
+if ! command -v docker &> /dev/null; then
+    echo "❌ Docker не установлен. Установите Docker Desktop."
+    exit 1
+fi
+
+if ! command -v docker-compose &> /dev/null; then
+    echo "❌ Docker Compose не установлен. Установите Docker Compose."
+    exit 1
+fi
+
+# Проверяем, запущен ли Docker
+if ! docker info &> /dev/null; then
+    echo "❌ Docker не запущен. Запустите Docker Desktop."
+    exit 1
+fi
+
+echo "✅ Docker и Docker Compose готовы"
+
+# Удаляем старый мусор
+echo "⏹️  Останавливаем существующие контейнеры..."
+docker-compose down -v
+docker system prune -a
+
+# Запускаем все сервисы
+echo "🚀 Запускаем все сервисы..."
+docker-compose up --build -d
+
+# Ждем запуска
+echo "⏳ Ждем запуска сервисов..."
+sleep 15
+
+# Проверяем статус
+echo "📊 Статус сервисов:"
+docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+
+# Healthcheck
+check_container_health() {
+    echo "Проверяем здоровье контейнера..."
+    
+    # Выполняем curl запрос с таймаутом 10 секунд
+    local response
+    response=$(curl -s --connect-timeout 10 --max-time 10 localhost:5001/api/health 2>&1)
+    local curl_exit_code=$?
+
+    # Проверяем код возврата curl
+    if [ $curl_exit_code -ne 0 ]; then
+        echo "❌ Healthcheck не прошел: контейнер недоступен"
+        echo "Ошибка: $response"
+        exit 1
+    fi
+
+    # Проверяем, что ответ содержит JSON с success:true
+    if echo "$response" | grep -q '"success":true' && echo "$response" | grep -q '"status":"healthy"'; then
+        echo "✅ Healthcheck прошел успешно!"
+        return 0
+    else
+        echo "❌ Healthcheck не прошел: получен некорректный ответ"
+        echo "Ответ сервера: $response"
+        exit 1
+    fi
+}
+
+check_container_health
+
+echo ""
+echo "✅ Система запущена!"
+echo "📱 Доступные URL:"
+echo "   Frontend:     http://localhost:3000"
+echo "   Backend API:  http://localhost:5001"
+echo "   Swagger:      http://localhost:3000/api/docs/swagger-ui"
+echo "   Health:       http://localhost:5001/api/health"
+echo ""
+echo "🔐 Учетные данные:"
+echo "   Email:        admin@crm.local"
+echo "   Пароль:       admin123"
+----------------------------------------------------------------------------
