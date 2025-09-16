@@ -95,9 +95,6 @@ echo "⏹️  Останавливаем существующие контейн
 docker-compose down -v
 docker system prune -a
 
-npm install
-npm run build
-
 # Запускаем все сервисы
 echo "🚀 Запускаем все сервисы..."
 docker-compose up --build -d
