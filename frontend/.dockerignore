@@ -1,0 +1,52 @@
+# Зависимости
+node_modules
+npm-debug.log
+yarn-error.log
+# package-lock.json - НЕ ИСКЛЮЧАЕМ, он нужен для надежной сборки
+
+# Сборка
+dist
+dist-ssr
+build
+*.local
+
+# Логи
+logs
+*.log
+
+# Тесты
+coverage
+.nyc_output
+
+# Разработка
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# Другое
+README.md
+*.md
+.eslintcache
+

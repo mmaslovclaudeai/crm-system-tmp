@@ -6,8 +6,35 @@ const getApiBaseUrl = () => {
   if (import.meta.env.DEV) {
     return '/api';
   }
+  
   // В продакшне используем переменную окружения или дефолт
-  return import.meta.env.VITE_API_URL || '/api';
+  const apiUrl = import.meta.env.VITE_API_URL || '/api';
+  
+  // Нормализуем URL: если это полный URL без протокола или с протоколом, 
+  // или если это относительный путь, используем относительный путь
+  // Всегда используем относительный путь для работы через nginx прокси
+  if (apiUrl.startsWith('http://') || apiUrl.startsWith('https://')) {
+    // Если указан полный URL, извлекаем только путь
+    try {
+      const url = new URL(apiUrl);
+      return url.pathname || '/api';
+    } catch {
+      return '/api';
+    }
+  }
+  
+  // Если это localhost:3000 или подобное без протокола - используем относительный путь
+  if (apiUrl.includes('localhost') || apiUrl.includes(':')) {
+    return '/api';
+  }
+  
+  // Если это относительный путь (начинается с /) - используем как есть
+  if (apiUrl.startsWith('/')) {
+    return apiUrl;
+  }
+  
+  // По умолчанию возвращаем /api
+  return '/api';
 };
 
 export const API_BASE_URL = getApiBaseUrl();
