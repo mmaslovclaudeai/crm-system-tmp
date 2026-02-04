@@ -126,12 +126,24 @@ log "🐳 Устанавливаем Docker"
 # Удаляем старые версии Docker если есть
 apt remove -y docker docker-engine docker.io containerd runc 2>/dev/null || true
 
+# Удаляем старые репозитории Docker, если они есть
+rm -f /etc/apt/sources.list.d/docker.list
+rm -f /etc/apt/sources.list.d/docker.list.save
+
+# Удаляем старые GPG ключи Docker
+rm -f /usr/share/keyrings/docker-archive-keyring.gpg
+rm -f /etc/apt/keyrings/docker.asc
+rm -f /etc/apt/keyrings/docker.gpg
+
+# Создаем директорию для ключей (современный стандарт)
+mkdir -p /etc/apt/keyrings
+
 # Добавляем официальный GPG ключ Docker
-mkdir -p /usr/share/keyrings
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+chmod a+r /etc/apt/keyrings/docker.gpg
 
 # Добавляем репозиторий Docker
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list >/dev/null
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list >/dev/null
 
 # Обновляем список пакетов
 apt update
