@@ -1,6 +1,35 @@
 #!/bin/bash
 
+set -euo pipefail
+
 # CRM-system Deployment Script
+
+# Простая функция логирования вместо системной утилиты `log` (macOS)
+log() {
+  # пример: [2026-02-04 12:00:00] 🔄 Обновляем систему
+  echo ""
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"
+  echo ""
+}
+
+# Проверяем, что скрипт запущен на Linux (Debian/Ubuntu-подобная система)
+if [ "$(uname -s)" != "Linux" ]; then
+  echo "❌ Этот скрипт предназначен для запуска на Linux (Debian/Ubuntu)."
+  echo "   На macOS используйте Docker Desktop и команду: docker compose up --build -d"
+  exit 1
+fi
+
+# Проверяем, что есть apt
+if ! command -v apt &>/dev/null; then
+  echo "❌ Не найден пакетный менеджер apt. Скрипт рассчитан на Debian/Ubuntu."
+  exit 1
+fi
+
+# Проверяем, что есть systemctl
+if ! command -v systemctl &>/dev/null; then
+  echo "❌ Не найдена команда systemctl. Нужна система с systemd (обычно это серверный Ubuntu/Debian)."
+  exit 1
+fi
 
 # Создание .env файла
 echo "Создание .env файла..."
@@ -77,20 +106,20 @@ apt update && apt upgrade -y
 # Установка необходимых пакетов
 log "📦 Устанавливаем необходимые пакеты"
 apt install -y \
-    curl \
-    wget \
-    git \
-    nginx \
-    certbot \
-    python3-certbot-nginx \
-    postgresql-client \
-    htop \
-    unzip \
-    software-properties-common \
-    apt-transport-https \
-    ca-certificates \
-    gnupg \
-    lsb-release
+  curl \
+  wget \
+  git \
+  nginx \
+  certbot \
+  python3-certbot-nginx \
+  postgresql-client \
+  htop \
+  unzip \
+  software-properties-common \
+  apt-transport-https \
+  ca-certificates \
+  gnupg \
+  lsb-release
 
 # Установка Docker
 log "🐳 Устанавливаем Docker"
@@ -98,10 +127,11 @@ log "🐳 Устанавливаем Docker"
 apt remove -y docker docker-engine docker.io containerd runc 2>/dev/null || true
 
 # Добавляем официальный GPG ключ Docker
+mkdir -p /usr/share/keyrings
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
 
 # Добавляем репозиторий Docker
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list >/dev/null
 
 # Обновляем список пакетов
 apt update
@@ -109,9 +139,11 @@ apt update
 # Устанавливаем Docker
 apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
-# Устанавливаем docker-compose отдельно (для совместимости)
-curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-chmod +x /usr/local/bin/docker-compose
+# Устанавливаем docker-compose отдельно (для совместимости с legacy-скриптами)
+if ! command -v docker-compose &>/dev/null; then
+  curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+  chmod +x /usr/local/bin/docker-compose
+fi
 
 # Запуск и включение Docker
 log "🐳 Запускаем и настраиваем Docker"
